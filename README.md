@@ -1,6 +1,8 @@
 # SeniorInsight Web Portal
 
-Initial React website setup using the latest Vite + React + TypeScript stack.
+Landing page do SeniorInsight (Vite + React + TypeScript), adaptada para web a partir das telas mobile do Figma "Senior APP".
+
+A página inicial fica em `src/App.tsx`; as imagens exportadas do Figma ficam em `src/assets/figma/`. O build (`npm run build`) gera `dist/`, que a Vercel detecta automaticamente como projeto Vite.
 
 ## Requirements
 
