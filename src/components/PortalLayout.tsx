@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import logo from '../assets/figma/logo-seniorinsight.png'
 import { useBackendHealth } from '../hooks/useBackendHealth'
+import { useSession } from '../hooks/useSession'
 import { Icon, type IconName } from './Icon'
 
 const PORTAL_NAV_ITEMS: {
@@ -18,6 +19,7 @@ const PORTAL_NAV_ITEMS: {
 
 export function PortalLayout() {
   const { data: health, isLoading, isError } = useBackendHealth()
+  const { session, isAuthenticated, loginWithKeycloak, logout } = useSession()
 
   const gatewayStatusLabel = isLoading
     ? 'Verificando API Gateway…'
@@ -63,9 +65,34 @@ export function PortalLayout() {
               <span className="portal-status-dot" />
               {gatewayStatusLabel}
             </span>
-            <Link to="/" className="btn btn--ghost btn--small">
-              Landing page
-            </Link>
+
+            <span
+              className="micro-pill micro-pill--blue"
+              title="Sessão mantida no Redis (gw:sess:{id}) via cookie httpOnly e proteção CSRF"
+            >
+              <Icon name="lock" size={14} />
+              {isAuthenticated
+                ? `BFF (${session.sessionKeyPrefix}:*) · CSRF ativo`
+                : 'Sessão BFF encerrada'}
+            </span>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={() => void logout()}
+              >
+                Sair ({session.user?.name.split(' ')[0]})
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn--navy btn--small"
+                onClick={() => loginWithKeycloak()}
+              >
+                Entrar (Keycloak)
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -79,7 +106,7 @@ export function PortalLayout() {
       <footer className="footer">
         <div className="container footer__inner">
           <img src={logo} alt="SeniorInsight" width={114} height={24} />
-          <p>© {new Date().getFullYear()} SeniorInsight · Portal Web (Familiar, Médico, Operadora e Equipe).</p>
+          <p>© {new Date().getFullYear()} SeniorInsight · Portal Web (BFF httpOnly + CSRF).</p>
           <Link to="/">Voltar para a página inicial</Link>
         </div>
       </footer>
