@@ -1,8 +1,8 @@
 # SeniorInsight Web Portal
 
-Landing page do SeniorInsight (Vite + React + TypeScript), adaptada para web a partir das telas mobile do Figma "Senior APP".
+Landing page e portal web do SeniorInsight (Vite + React + TypeScript + React Router + TanStack Query + Recharts).
 
-A página inicial fica em `src/App.tsx`; as imagens exportadas do Figma ficam em `src/assets/figma/`. O build (`npm run build`) gera `dist/`, que a Vercel detecta automaticamente como projeto Vite.
+A landing page institucional fica em `src/pages/LandingPage.tsx` (rota `/`) e convive com o portal em `/portal` (`src/pages/` para as áreas do Familiar, Médico, Operadora e Equipe); os componentes compartilhados e gráficos Recharts ficam em `src/components/`, os clientes HTTP e serviços em `src/services/`, os hooks do TanStack Query em `src/hooks/` e as imagens exportadas do Figma em `src/assets/figma/`. O build (`npm run build`) gera `dist/`, que a Vercel detecta automaticamente como projeto Vite.
 
 ## Requirements
 
@@ -28,17 +28,18 @@ A página inicial fica em `src/App.tsx`; as imagens exportadas do Figma ficam em
    npm run dev
    ```
 
-## Java Spring backend integration
+## Integração com o API Gateway (BFF: cookie httpOnly + CSRF)
 
-The frontend reads the backend base URL from:
+O portal **não guarda tokens no navegador** (`localStorage` / `sessionStorage`). O login OIDC no Keycloak é intermediado pelo `si-api-gateway` (BFF), que mantém a sessão no Redis (`gw:sess:{id}`) associada a um cookie `httpOnly` e exige proteção anti-CSRF (`XSRF-TOKEN` → cabeçalho `X-XSRF-TOKEN` nas requisições `POST`, `PUT`, `PATCH` e `DELETE`).
+
+A URL base deve apontar exclusivamente para o API Gateway (nunca diretamente para microsserviços internos):
 
 - `VITE_API_BASE_URL` (default: `http://localhost:8080/api`)
 
-The initial app checks backend health by calling:
+O portal verifica a disponibilidade do gateway e o estado da sessão chamando:
 
 - `GET {VITE_API_BASE_URL}/health`
-
-Make sure your Spring backend exposes this endpoint and has CORS enabled for the frontend origin (`http://localhost:5173` by default).
+- `GET {VITE_API_BASE_URL}/auth/session` (com `credentials: 'include'`)
 
 ## Scripts
 
