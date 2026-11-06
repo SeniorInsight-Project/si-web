@@ -1,8 +1,8 @@
 # SeniorInsight Web Portal
 
-Landing page do SeniorInsight (Vite + React + TypeScript), adaptada para web a partir das telas mobile do Figma "Senior APP".
+Landing page e portal web do SeniorInsight (Vite + React + TypeScript + React Router + TanStack Query + Recharts).
 
-A página inicial fica em `src/App.tsx`; as imagens exportadas do Figma ficam em `src/assets/figma/`. O build (`npm run build`) gera `dist/`, que a Vercel detecta automaticamente como projeto Vite.
+A landing page institucional fica em `src/pages/LandingPage.tsx` (rota `/`) e convive com o portal em `/portal` (`src/pages/` para as áreas do Familiar, Médico, Operadora e Equipe); os componentes compartilhados e gráficos Recharts ficam em `src/components/`, os clientes HTTP e serviços em `src/services/`, os hooks do TanStack Query em `src/hooks/` e as imagens exportadas do Figma em `src/assets/figma/`. O build (`npm run build`) gera `dist/`, que a Vercel detecta automaticamente como projeto Vite.
 
 ## Requirements
 
