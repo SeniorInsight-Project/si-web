@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { PortalLayout } from './components/PortalLayout'
+import { ProtectedRoute, SessionProvider } from './components/SessionProvider'
 import { LandingPage } from './pages/LandingPage'
 
 const PortalHomePage = lazy(() =>
@@ -22,25 +23,55 @@ const EquipePage = lazy(() =>
 
 function App() {
   return (
-    <Suspense
-      fallback={
-        <div className="container" style={{ padding: '48px 24px' }}>
-          <p className="portal-muted">Carregando portal…</p>
-        </div>
-      }
-    >
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/portal" element={<PortalLayout />}>
-          <Route index element={<PortalHomePage />} />
-          <Route path="familiar" element={<FamiliarPage />} />
-          <Route path="medico" element={<MedicoPage />} />
-          <Route path="operadora" element={<OperadoraPage />} />
-          <Route path="equipe" element={<EquipePage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+    <SessionProvider>
+      <Suspense
+        fallback={
+          <div className="container" style={{ padding: '48px 24px' }}>
+            <p className="portal-muted">Carregando portal…</p>
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/portal" element={<PortalLayout />}>
+            <Route index element={<PortalHomePage />} />
+            <Route
+              path="familiar"
+              element={
+                <ProtectedRoute requiredRole="FAMILIAR">
+                  <FamiliarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="medico"
+              element={
+                <ProtectedRoute requiredRole="MEDICO">
+                  <MedicoPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="operadora"
+              element={
+                <ProtectedRoute requiredRole="OPERADORA">
+                  <OperadoraPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="equipe"
+              element={
+                <ProtectedRoute requiredRole="EQUIPE">
+                  <EquipePage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </SessionProvider>
   )
 }
 
