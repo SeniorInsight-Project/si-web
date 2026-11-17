@@ -37,50 +37,6 @@ export function buildOidcLogoutUrl(): string {
   return `${GATEWAY_ORIGIN}/logout`
 }
 
-export function createDemoSession(role: PortalRole = 'FAMILIAR'): BffSessionResponse {
-  const profilesByRole: Record<PortalRole, BffUserProfile> = {
-    FAMILIAR: {
-      sub: 'kc-sub-familiar-01',
-      name: 'Carlos Eduardo Lima',
-      email: 'carlos.lima@familia.seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'FAMILIAR',
-    },
-    MEDICO: {
-      sub: 'kc-sub-medico-01',
-      name: 'Dr. Henrique Silva',
-      email: 'henrique.silva@clinica.seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'MEDICO',
-    },
-    OPERADORA: {
-      sub: 'kc-sub-operadora-01',
-      name: ' Marina Costa (ViverBem)',
-      email: 'marina.costa@viverbem.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'OPERADORA',
-    },
-    EQUIPE: {
-      sub: 'kc-sub-equipe-01',
-      name: 'Engenharia & DPO SeniorInsight',
-      email: 'governanca@seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'EQUIPE',
-    },
-  }
-
-  return {
-    authenticated: true,
-    sessionKeyPrefix: 'gw:sess',
-    csrfHeaderName: 'X-XSRF-TOKEN',
-    csrfProtected: true,
-    user: {
-      ...profilesByRole[role],
-      name: profilesByRole[role].name.trim(),
-    },
-  }
-}
-
 export const UNAUTHENTICATED_SESSION: BffSessionResponse = {
   authenticated: false,
   sessionKeyPrefix: 'gw:sess',
@@ -109,9 +65,7 @@ export async function fetchBffSession(): Promise<BffSessionResponse> {
       return UNAUTHENTICATED_SESSION
     }
 
-    // Fallback de demonstração local quando o container do api-gateway não está em execução
-    setCsrfToken('bff-csrf-active-token')
-    return createDemoSession('FAMILIAR')
+    throw error
   }
 }
 

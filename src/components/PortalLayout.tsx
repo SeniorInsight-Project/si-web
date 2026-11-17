@@ -18,16 +18,30 @@ const PORTAL_NAV_ITEMS: {
 ]
 
 export function PortalLayout() {
-  const { data: health, isLoading, isError } = useBackendHealth()
-  const { session, isAuthenticated, loginWithKeycloak, logout } = useSession()
+  const { data: health, isLoading, isError, refetch: refetchHealth } = useBackendHealth()
+  const {
+    session,
+    isAuthenticated,
+    gatewayUnavailable,
+    isRetrying,
+    loginWithKeycloak,
+    retrySession,
+    logout,
+  } = useSession()
+
+  const isGatewayUnavailable = gatewayUnavailable || isError
 
   const gatewayStatusLabel = isLoading
     ? 'Verificando API Gateway…'
-    : isError
-      ? 'Gateway offline (modo demonstração)'
+    : isGatewayUnavailable
+      ? 'Gateway indisponível'
       : `Gateway online (${health?.status ?? 'UP'})`
 
-  const gatewayStatusTone = isLoading ? 'amber' : isError ? 'coral' : 'green'
+  const gatewayStatusTone = isLoading ? 'amber' : isGatewayUnavailable ? 'coral' : 'green'
+
+  const retryGateway = async () => {
+    await Promise.all([refetchHealth(), retrySession()])
+  }
 
   return (
     <div className="portal-shell">
@@ -93,6 +107,17 @@ export function PortalLayout() {
                 Entrar (Keycloak)
               </button>
             )}
+
+            {isGatewayUnavailable ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={() => void retryGateway()}
+                disabled={isRetrying || isLoading}
+              >
+                {isRetrying || isLoading ? 'Tentando novamente…' : 'Tentar novamente'}
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
