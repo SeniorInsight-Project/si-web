@@ -1,13 +1,15 @@
 import { createContext, useContext } from 'react'
-import type { BffSessionResponse, PortalRole } from '../services/authService'
+import type { BffSessionResponse } from '../services/authService'
 
 export type SessionContextValue = {
   session: BffSessionResponse
   isLoading: boolean
   isAuthenticated: boolean
+  gatewayUnavailable: boolean
+  isRetrying: boolean
   loginWithKeycloak: (returnTo?: string) => void
+  retrySession: () => Promise<void>
   logout: () => Promise<void>
-  switchRole: (role: PortalRole) => void
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null)
