@@ -1815,3 +1815,9 @@
 .portal-table tr.is-active td {
   background: #f4f6fb;
 }
+
+.portal-upload {
+  display: inline-flex;
+  cursor: pointer;
+  margin: 8px 0 12px;
+}
