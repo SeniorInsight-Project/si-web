@@ -87,7 +87,7 @@ const faqs = [
   },
   {
     q: 'Meus dados de saúde ficam seguros?',
-    a: 'O acesso usa autenticação forte com verificação em duas etapas, e os dados são tratados conforme a LGPD, visíveis só para quem faz parte da rede.',
+    a: 'O acesso é por login seguro, e os dados são tratados conforme a LGPD, visíveis só para quem faz parte da rede.',
   },
   {
     q: 'Quando o app fica disponível?',
@@ -189,8 +189,8 @@ export function LandingPage() {
                   <Icon name="check" size={16} />
                 </span>
                 <span>
-                  <strong>Losartana tomada</strong>
-                  <small>Dona Maria · 10:02</small>
+                  <strong>Remédio tomado</strong>
+                  <small>Confirmado no app</small>
                 </span>
               </div>
               <div className="float-chip float-chip--bottom">
@@ -198,8 +198,8 @@ export function LandingPage() {
                   <Icon name="heart" size={16} />
                 </span>
                 <span>
-                  <strong>74 bpm</strong>
-                  <small>Estável &amp; seguro</small>
+                  <strong>Batimentos</strong>
+                  <small>Acompanhados pelo relógio</small>
                 </span>
               </div>
             </div>
@@ -284,7 +284,7 @@ export function LandingPage() {
                 </p>
                 <ul className="checklist">
                   <li><Icon name="check" size={18} /> Semáforo do bem-estar em tempo real</li>
-                  <li><Icon name="check" size={18} /> Batimentos, passos e glicemia</li>
+                  <li><Icon name="check" size={18} /> Batimentos e passos</li>
                   <li><Icon name="check" size={18} /> Comando de resgate para coordenar a família</li>
                 </ul>
               </div>
@@ -335,13 +335,13 @@ export function LandingPage() {
               <div>
                 <h2>Privacidade levada a sério</h2>
                 <p>
-                  Dados de saúde são sensíveis. Por isso o SeniorInsight usa login seguro com
-                  verificação em duas etapas, acesso só para quem a família convidou e tratamento
+                  Dados de saúde são sensíveis. Por isso o SeniorInsight usa login seguro,
+                  acesso só para quem a família convidou e tratamento
                   de dados de acordo com a LGPD.
                 </p>
               </div>
               <ul className="trust__list">
-                <li><Icon name="lock" size={18} /> Autenticação em duas etapas</li>
+                <li><Icon name="lock" size={18} /> Login seguro</li>
                 <li><Icon name="users" size={18} /> Acesso por convite</li>
                 <li><Icon name="shield" size={18} /> Em conformidade com a LGPD</li>
               </ul>

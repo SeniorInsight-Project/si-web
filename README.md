@@ -34,7 +34,11 @@ O portal **não guarda tokens no navegador** (`localStorage` / `sessionStorage`)
 
 A URL base deve apontar exclusivamente para o API Gateway (nunca diretamente para microsserviços internos):
 
-- `VITE_API_BASE_URL` (default: `http://localhost:8080/api`)
+- `VITE_API_BASE_URL`: obrigatória no `npm run build`, que falha sem ela. Só o `npm run dev` usa `http://localhost:8080/api` como padrão.
+
+Se o gateway não responder, responder com erro (401, 403, 5xx) ou devolver uma sessão inválida, o portal fica **sem sessão**. Não há sessão de demonstração por fallback.
+
+Para desenvolver as telas sem o gateway, use `VITE_MODO_DEMO=true` no `npm run dev`. A sessão de demonstração só existe no servidor de desenvolvimento e não entra no build.
 
 O portal verifica a disponibilidade do gateway e o estado da sessão chamando:
 
@@ -46,4 +50,5 @@ O portal verifica a disponibilidade do gateway e o estado da sessão chamando:
 - `npm run dev` – start local dev server
 - `npm run build` – type-check and build for production
 - `npm run lint` – run lint checks
+- `npm test` – run the tests (Vitest)
 - `npm run preview` – preview production build locally

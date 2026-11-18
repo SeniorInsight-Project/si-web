@@ -4,9 +4,9 @@ import { Icon } from './Icon'
 const HOLD_MS = 3000
 
 const contacts = [
-  { initials: 'CA', name: 'Carlos', role: 'Filho', tone: 'blue' },
-  { initials: 'RO', name: 'Roberta', role: 'Neta', tone: 'green' },
-  { initials: 'DR', name: 'Dr. Silva', role: 'Cardiologista', tone: 'purple' },
+  { initials: 'F1', name: 'Familiar 1', role: 'Administrador', tone: 'blue' },
+  { initials: 'F2', name: 'Familiar 2', role: 'Cuidador', tone: 'green' },
+  { initials: 'F3', name: 'Familiar 3', role: 'Observador', tone: 'purple' },
 ] as const
 
 type Phase = 'idle' | 'holding' | 'sent'
@@ -135,8 +135,8 @@ export function SosDemo() {
               <Icon name="phone" size={18} /> Pressione e segure por 3 segundos
             </p>
             <p className="sos-demo__hint">
-              O tempo de espera evita toques acidentais. Ao completar, a rede familiar
-              e o SAMU (192) recebem o alerta com a localização do idoso.
+              O tempo de espera evita toques acidentais. Ao completar, o alerta vai para a
+              rede familiar com a localização do idoso. Em emergência, ligue 192.
             </p>
           </>
         )}
