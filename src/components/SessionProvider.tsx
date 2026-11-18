@@ -13,13 +13,20 @@ import { Icon } from './Icon'
 
 const SESSION_QUERY_KEY = ['bff-session'] as const
 
+const ROLE_LABELS: Record<PortalRole, string> = {
+  FAMILIAR: 'Familiar',
+  MEDICO: 'Médico',
+  OPERADORA: 'Operadora',
+  EQUIPE: 'Equipe',
+}
+
 type SessionProviderProps = {
   children: ReactNode
 }
 
 export function SessionProvider({ children }: SessionProviderProps) {
   const queryClient = useQueryClient()
-  const { data, isLoading } = useQuery<BffSessionResponse>({
+  const { data, isLoading, isFetching, refetch } = useQuery<BffSessionResponse>({
     queryKey: SESSION_QUERY_KEY,
     queryFn: fetchBffSession,
     staleTime: 60_000,
@@ -28,19 +35,22 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   const session = data ?? UNAUTHENTICATED_SESSION
 
-  const loginWithKeycloak = (returnTo = '/portal') => {
+  const loginWithKeycloak = () => {
     if (typeof window !== 'undefined') {
-      window.location.assign(buildOidcLoginUrl(returnTo))
+      window.location.assign(buildOidcLoginUrl())
     }
   }
 
   const logout = async () => {
+    let navegando = false
     try {
-      await logoutBffSession()
+      navegando = await logoutBffSession()
     } catch {
-      // Mantém encerramento local mesmo se o gateway estiver indisponível
+      // Sem o gateway, encerra só o estado local
     }
-    queryClient.setQueryData(SESSION_QUERY_KEY, UNAUTHENTICATED_SESSION)
+    if (!navegando) {
+      queryClient.setQueryData(SESSION_QUERY_KEY, UNAUTHENTICATED_SESSION)
+    }
   }
 
   return (
@@ -49,6 +59,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
         session,
         isLoading,
         isAuthenticated: session.authenticated,
+        isUnavailable: Boolean(session.unavailable),
+        isRetrying: isFetching && !isLoading,
+        retry: () => void refetch(),
         loginWithKeycloak,
         logout,
       }}
@@ -58,20 +71,55 @@ export function SessionProvider({ children }: SessionProviderProps) {
   )
 }
 
+/** Tela de serviço indisponível, com nova tentativa. */
+export function ServiceUnavailable() {
+  const { retry, isRetrying } = useSession()
+
+  return (
+    <section className="portal-card portal-auth-gate" aria-label="Serviço indisponível">
+      <div className="portal-card__title-row">
+        <span className="feature__icon feature__icon--coral">
+          <Icon name="activity" size={24} />
+        </span>
+        <div>
+          <h2>Serviço indisponível</h2>
+          <p className="portal-muted">
+            Não conseguimos verificar sua sessão agora. Tente de novo em alguns instantes.
+          </p>
+        </div>
+      </div>
+      <div className="portal-auth-gate__actions">
+        <button
+          type="button"
+          className="btn btn--navy btn--small"
+          onClick={retry}
+          disabled={isRetrying}
+        >
+          {isRetrying ? 'Tentando…' : 'Tentar de novo'}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 type ProtectedRouteProps = {
   requiredRole?: PortalRole
   children: ReactNode
 }
 
 export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) {
-  const { session, isLoading, isAuthenticated, loginWithKeycloak } = useSession()
+  const { session, isLoading, isAuthenticated, isUnavailable, loginWithKeycloak } = useSession()
 
   if (isLoading) {
     return (
       <div className="portal-card" role="status" aria-live="polite">
-        <p className="portal-muted">Validando sessão BFF (cookie httpOnly + CSRF)…</p>
+        <p className="portal-muted">Verificando sua sessão…</p>
       </div>
     )
+  }
+
+  if (isUnavailable) {
+    return <ServiceUnavailable />
   }
 
   if (!isAuthenticated || !session.user) {
@@ -82,11 +130,9 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
             <Icon name="lock" size={24} />
           </span>
           <div>
-            <h2>Sessão protegida pelo BFF do API Gateway</h2>
+            <h2>Entre para acessar o portal</h2>
             <p className="portal-muted">
-              O portal não armazena tokens no navegador. A autenticação OIDC ocorre no Keycloak via
-              gateway, mantendo a sessão em cookie <code>httpOnly</code> (<code>gw:sess:&#123;id&#125;</code> no
-              Redis) com proteção anti-CSRF (<code>X-XSRF-TOKEN</code>).
+              Use a mesma conta do aplicativo SeniorInsight.
             </p>
           </div>
         </div>
@@ -97,7 +143,7 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
             className="btn btn--navy btn--small"
             onClick={() => loginWithKeycloak()}
           >
-            <Icon name="shield" size={16} /> Entrar via Keycloak (BFF OIDC)
+            <Icon name="shield" size={16} /> Entrar
           </button>
         </div>
       </section>
@@ -112,9 +158,9 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
             <Icon name="shield" size={24} />
           </span>
           <div>
-            <h2>Perfil sem permissão para esta área</h2>
+            <h2>Sua conta não tem acesso a esta área</h2>
             <p className="portal-muted">
-              A rota exige o papel <strong>{requiredRole}</strong> na sessão do BFF.
+              Esta área é do perfil <strong>{ROLE_LABELS[requiredRole]}</strong>.
             </p>
           </div>
         </div>

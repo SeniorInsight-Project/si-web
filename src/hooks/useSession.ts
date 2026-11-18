@@ -5,7 +5,11 @@ export type SessionContextValue = {
   session: BffSessionResponse
   isLoading: boolean
   isAuthenticated: boolean
-  loginWithKeycloak: (returnTo?: string) => void
+  /** O gateway não respondeu; a sessão está fechada e o portal oferece nova tentativa. */
+  isUnavailable: boolean
+  isRetrying: boolean
+  retry: () => void
+  loginWithKeycloak: () => void
   logout: () => Promise<void>
 }
 

@@ -1,8 +1,19 @@
 {
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://seniorinsight-api.eastus.cloudapp.azure.com/api/:path*" },
+    { "source": "/login/:path*", "destination": "https://seniorinsight-api.eastus.cloudapp.azure.com/login/:path*" },
+    { "source": "/oauth2/:path*", "destination": "https://seniorinsight-api.eastus.cloudapp.azure.com/oauth2/:path*" },
+    { "source": "/logout", "destination": "https://seniorinsight-api.eastus.cloudapp.azure.com/logout" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/interno/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/portal/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     }
   ]
 }

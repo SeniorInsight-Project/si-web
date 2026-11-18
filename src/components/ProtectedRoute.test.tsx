@@ -4,7 +4,7 @@ import { SessionContext, type SessionContextValue } from '../hooks/useSession'
 import { UNAUTHENTICATED_SESSION, type PortalRole } from '../services/authService'
 import { ProtectedRoute } from './SessionProvider'
 
-function contextWith(roles: PortalRole[] | null): SessionContextValue {
+function contextWith(roles: PortalRole[] | null, unavailable = false): SessionContextValue {
   const session =
     roles === null
       ? UNAUTHENTICATED_SESSION
@@ -18,14 +18,17 @@ function contextWith(roles: PortalRole[] | null): SessionContextValue {
     session,
     isLoading: false,
     isAuthenticated: session.authenticated,
+    isUnavailable: unavailable,
+    isRetrying: false,
+    retry: vi.fn(),
     loginWithKeycloak: vi.fn(),
     logout: vi.fn(),
   }
 }
 
-function renderRoute(roles: PortalRole[] | null, requiredRole?: PortalRole) {
+function renderRoute(roles: PortalRole[] | null, requiredRole?: PortalRole, unavailable = false) {
   return render(
-    <SessionContext.Provider value={contextWith(roles)}>
+    <SessionContext.Provider value={contextWith(roles, unavailable)}>
       <ProtectedRoute requiredRole={requiredRole}>
         <p>conteúdo protegido</p>
       </ProtectedRoute>
@@ -55,6 +58,14 @@ describe('ProtectedRoute', () => {
     renderRoute([], 'FAMILIAR')
 
     expect(screen.queryByText('conteúdo protegido')).toBeNull()
+  })
+
+  it('gateway indisponível mostra a tela de nova tentativa, sem o conteúdo', () => {
+    renderRoute(null, 'FAMILIAR', true)
+
+    expect(screen.queryByText('conteúdo protegido')).toBeNull()
+    expect(screen.getByRole('region', { name: 'Serviço indisponível' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeTruthy()
   })
 
   it('com o papel exigido, mostra o conteúdo', () => {

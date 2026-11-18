@@ -1720,3 +1720,25 @@
     padding: 20px;
   }
 }
+
+/* Área interna (/interno/*): layout mínimo, sem o menu do portal */
+.interno-shell {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.interno-header {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+}
+
+.interno-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.interno-main {
+  padding: 40px 0 72px;
+}

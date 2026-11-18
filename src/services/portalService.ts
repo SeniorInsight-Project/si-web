@@ -77,33 +77,6 @@ export type OperadoraOverview = {
   trends: TrendPoint[]
 }
 
-export type EquipeOverview = {
-  activePromptVersion: string
-  modelName: string
-  dailyBudgetUsedPct: number
-  dailyCallsCount: number
-  p95LatencyMs: number
-  prompts: {
-    version: string
-    status: string
-    updatedAt: string
-    avgTokens: number
-  }[]
-  limits: {
-    name: string
-    current: string
-    threshold: string
-    status: string
-  }[]
-  lgpdRequests: {
-    protocol: string
-    type: 'EXPORTACAO' | 'EXCLUSAO'
-    requestedAt: string
-    status: string
-  }[]
-  trends: TrendPoint[]
-}
-
 const SEVEN_DAY_TRENDS: TrendPoint[] = [
   { label: '18/10', score: 22, heartRate: 72, steps: 4120, sleepHours: 7.4 },
   { label: '19/10', score: 24, heartRate: 74, steps: 3980, sleepHours: 7.1 },
@@ -246,65 +219,6 @@ export async function fetchOperadoraOverview(period: TrendPeriod): Promise<Opera
         riskScore: 16,
         lastSync: 'Há 9 min',
         activeAlerts: 0,
-      },
-    ],
-    trends: getTrendsByPeriod(period),
-  }
-}
-
-export async function fetchEquipeOverview(period: TrendPeriod): Promise<EquipeOverview> {
-  return {
-    activePromptVersion: 'insight-v2.4-ptbr',
-    modelName: 'gemini-2.5-flash (schema JSON validado)',
-    dailyBudgetUsedPct: 38,
-    dailyCallsCount: 1840,
-    p95LatencyMs: 640,
-    prompts: [
-      {
-        version: 'insight-v2.4-ptbr',
-        status: 'Ativo em produção',
-        updatedAt: '15/10/2026',
-        avgTokens: 612,
-      },
-      {
-        version: 'insight-v2.3-ptbr',
-        status: 'Reserva homologada',
-        updatedAt: '01/10/2026',
-        avgTokens: 590,
-      },
-    ],
-    limits: [
-      {
-        name: 'Teto diário Gemini (insight-service)',
-        current: '1.840 / 5.000 chamadas',
-        threshold: '80% alerta · 100% circuit breaker',
-        status: 'Normal',
-      },
-      {
-        name: 'Latência de entrega SOS (p95)',
-        current: '1,4 s (servidor) · 4,8 s (push)',
-        threshold: '≤ 2 s servidor / ≤ 10 s total (RNF-001)',
-        status: 'Dentro do SLA',
-      },
-      {
-        name: 'Sessões BFF ativas no Redis',
-        current: '214 sessões (gw:sess:*)',
-        threshold: 'TTL 15 min · anti-CSRF ativo',
-        status: 'Normal',
-      },
-    ],
-    lgpdRequests: [
-      {
-        protocol: 'LGPD-2026-0089',
-        type: 'EXPORTACAO',
-        requestedAt: '23/10/2026 14:10',
-        status: 'Concluído (URL assinada 7 dias)',
-      },
-      {
-        protocol: 'LGPD-2026-0091',
-        type: 'EXCLUSAO',
-        requestedAt: '24/10/2026 09:05',
-        status: 'Evento lgpd.erasure.requested confirmado',
       },
     ],
     trends: getTrendsByPeriod(period),

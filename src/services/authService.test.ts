@@ -38,6 +38,17 @@ describe('fetchBffSession falha fechado', () => {
     expect(session.user).toBeNull()
   })
 
+  it.each([
+    [401, false],
+    [403, false],
+    [500, true],
+    [503, true],
+  ])('HTTP %i marca indisponível = %s', async (status, indisponivel) => {
+    respondWith(status)
+
+    expect(Boolean((await fetchBffSession()).unavailable)).toBe(indisponivel)
+  })
+
   it('corpo que não é JSON não autentica', async () => {
     vi.stubGlobal(
       'fetch',

@@ -1,6 +1,7 @@
 import { GATEWAY_ORIGIN } from '../config'
 import {
   apiRequest,
+  ApiError,
   getCsrfToken,
   purgeBrowserStoredTokens,
   setCsrfToken,
@@ -23,27 +24,30 @@ export type BffSessionResponse = {
   csrfHeaderName: 'X-XSRF-TOKEN'
   csrfProtected: boolean
   user: BffUserProfile | null
+  /** O gateway não respondeu (rede, 5xx ou resposta inválida). A sessão continua fechada. */
+  unavailable?: boolean
   expiresAt?: string
   csrfToken?: string
 }
 
-export function buildOidcLoginUrl(returnTo = '/portal'): string {
-  const safePath = returnTo.startsWith('/') ? returnTo : '/portal'
-  const redirectParam = encodeURIComponent(safePath)
-  return `${GATEWAY_ORIGIN}/oauth2/authorization/keycloak?redirect_uri=${redirectParam}`
+/** Início do login OIDC no BFF. Depois do Keycloak, o gateway sempre leva a /portal. */
+export function buildOidcLoginUrl(): string {
+  return `${GATEWAY_ORIGIN}/oauth2/authorization/keycloak`
 }
 
+/** Logout no BFF: POST com o token de CSRF, que encerra também a sessão do Keycloak. */
 export function buildOidcLogoutUrl(): string {
   return `${GATEWAY_ORIGIN}/logout`
 }
 
-export function unauthenticatedSession(): BffSessionResponse {
+export function unauthenticatedSession(unavailable = false): BffSessionResponse {
   return {
     authenticated: false,
     sessionKeyPrefix: 'gw:sess',
     csrfHeaderName: 'X-XSRF-TOKEN',
     csrfProtected: false,
     user: null,
+    ...(unavailable ? { unavailable: true } : {}),
   }
 }
 
@@ -106,7 +110,8 @@ export function parseBffSession(payload: unknown): BffSessionResponse {
 
 /**
  * Consulta a sessão no BFF e falha fechado: erro de rede, 401, 403, 5xx ou resposta
- * inválida resultam em sessão não autenticada.
+ * inválida resultam em sessão não autenticada. Fora o 401/403, a sessão volta marcada
+ * como `unavailable`, para o portal oferecer uma nova tentativa.
  */
 export async function fetchBffSession(): Promise<BffSessionResponse> {
   purgeBrowserStoredTokens()
@@ -123,10 +128,14 @@ export async function fetchBffSession(): Promise<BffSessionResponse> {
     if (isRecord(payload) && isNonEmptyString(payload.csrfToken)) {
       setCsrfToken(payload.csrfToken)
     }
+    if (!isRecord(payload) || typeof payload.authenticated !== 'boolean') {
+      return unauthenticatedSession(true)
+    }
     return parseBffSession(payload)
-  } catch {
+  } catch (error) {
     setCsrfToken(null)
-    return unauthenticatedSession()
+    const negado = error instanceof ApiError && (error.status === 401 || error.status === 403)
+    return unauthenticatedSession(!negado)
   }
 }
 
@@ -144,14 +153,30 @@ export async function refreshBffCsrfToken(): Promise<string | null> {
   return getCsrfToken()
 }
 
-export async function logoutBffSession(): Promise<void> {
+/**
+ * Sai pelo BFF: envia um formulário POST /logout com o token de CSRF. A navegação passa
+ * pelo logout do Keycloak e volta à página inicial. Sem token (gateway fora do ar), só
+ * limpa o estado local e devolve false.
+ */
+export async function logoutBffSession(): Promise<boolean> {
   purgeBrowserStoredTokens()
+  const token = await refreshBffCsrfToken()
+  setCsrfToken(null)
 
-  try {
-    await apiRequest<void>('/auth/logout', {
-      method: 'POST',
-    })
-  } finally {
-    setCsrfToken(null)
+  if (!token || typeof document === 'undefined') {
+    return false
   }
+
+  const form = document.createElement('form')
+  form.method = 'POST'
+  form.action = buildOidcLogoutUrl()
+  form.style.display = 'none'
+  const campo = document.createElement('input')
+  campo.type = 'hidden'
+  campo.name = '_csrf'
+  campo.value = token
+  form.appendChild(campo)
+  document.body.appendChild(form)
+  form.submit()
+  return true
 }

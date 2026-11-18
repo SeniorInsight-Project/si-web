@@ -1,10 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  fetchEquipeOverview,
   fetchFamiliarOverview,
   fetchMedicoOverview,
   fetchOperadoraOverview,
-  type EquipeOverview,
   type FamiliarOverview,
   type MedicoOverview,
   type OperadoraOverview,
@@ -31,14 +29,6 @@ export function useOperadoraOverview(period: TrendPeriod) {
   return useQuery<OperadoraOverview>({
     queryKey: ['portal', 'operadora', period],
     queryFn: () => fetchOperadoraOverview(period),
-    staleTime: 60_000,
-  })
-}
-
-export function useEquipeOverview(period: TrendPeriod) {
-  return useQuery<EquipeOverview>({
-    queryKey: ['portal', 'equipe', period],
-    queryFn: () => fetchEquipeOverview(period),
     staleTime: 60_000,
   })
 }
