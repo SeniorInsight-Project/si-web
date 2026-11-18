@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon'
 import { ProtectedRoute } from '../components/SessionProvider'
 import { useSession } from '../hooks/useSession'
 import { viewsForRoles } from '../portalViews'
+import { lerConvitePendente } from '../services/medicoApi'
 
 export function PortalHomePage() {
   return (
@@ -16,6 +17,11 @@ export function PortalHomePage() {
 function PortalViews() {
   const { session } = useSession()
   const views = viewsForRoles(session.user?.roles ?? [])
+
+  // Volta do login com um convite aberto: o BFF sempre leva a /portal.
+  if (lerConvitePendente()) {
+    return <Navigate to="/portal/convite" replace />
+  }
 
   if (views.length === 1) {
     return <Navigate to={views[0].to} replace />

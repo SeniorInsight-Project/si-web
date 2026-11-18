@@ -9,25 +9,6 @@ export type TrendPoint = {
   steps: number
 }
 
-export type MedicoPatient = {
-  id: string
-  name: string
-  age: number
-  riskScore: number
-  riskBand: RiskBand
-  lastUpdated: string
-  comorbidities: string[]
-  latestReportDate: string
-}
-
-export type MedicoOverview = {
-  doctorName: string
-  specialty: string
-  readOnlyNotice: string
-  patients: MedicoPatient[]
-  trends: TrendPoint[]
-}
-
 export type OperadoraCohortRow = {
   code: string
   ageGroup: string
@@ -80,47 +61,6 @@ const THIRTY_DAY_TRENDS: TrendPoint[] = Array.from({ length: 30 }, (_, index) =>
 
 function getTrendsByPeriod(period: TrendPeriod): TrendPoint[] {
   return period === '7d' ? SEVEN_DAY_TRENDS : THIRTY_DAY_TRENDS
-}
-
-export async function fetchMedicoOverview(period: TrendPeriod): Promise<MedicoOverview> {
-  return {
-    doctorName: 'Dr. Henrique Silva',
-    specialty: 'Cardiologia e Clínica Médica · CRM-DF 18420',
-    readOnlyNotice: 'Acesso clínico somente leitura autorizado pela família (RN-011 / LGPD).',
-    patients: [
-      {
-        id: 'pac-01',
-        name: 'Maria Aparecida Lima',
-        age: 78,
-        riskScore: 19,
-        riskBand: 'ESTAVEL',
-        lastUpdated: '24/10/2026 10:15',
-        comorbidities: ['Hipertensão arterial', 'Diabetes tipo 2'],
-        latestReportDate: '19/10/2026 (PDF assinado)',
-      },
-      {
-        id: 'pac-02',
-        name: 'Antônio Carlos Ferreira',
-        age: 82,
-        riskScore: 54,
-        riskBand: 'ATENCAO',
-        lastUpdated: '24/10/2026 09:40',
-        comorbidities: ['Fibrilação atrial', 'DPOC leve'],
-        latestReportDate: '19/10/2026 (PDF assinado)',
-      },
-      {
-        id: 'pac-03',
-        name: 'Helena Souza Mendes',
-        age: 75,
-        riskScore: 26,
-        riskBand: 'ESTAVEL',
-        lastUpdated: '24/10/2026 08:55',
-        comorbidities: ['Hipotireoidismo', 'Osteoporose'],
-        latestReportDate: '19/10/2026 (PDF assinado)',
-      },
-    ],
-    trends: getTrendsByPeriod(period),
-  }
 }
 
 export async function fetchOperadoraOverview(period: TrendPeriod): Promise<OperadoraOverview> {

@@ -24,7 +24,7 @@ function responder(rotas: Rota[]) {
   )
 }
 
-function renderizar() {
+function renderizarFamiliar() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
@@ -65,7 +65,7 @@ describe('FamiliarPage', () => {
       [/serie/, 200, { idosoId: IDOSO.id, de: '2026-11-12', ate: '2026-11-18', series: [] }],
     ])
 
-    renderizar()
+    renderizarFamiliar()
 
     expect(await screen.findByRole('heading', { name: 'Teresa Nunes' })).toBeTruthy()
     expect(await screen.findByText('Atrasado')).toBeTruthy()
@@ -78,7 +78,7 @@ describe('FamiliarPage', () => {
   it('sem idosos mostra o estado vazio, sem dados inventados', async () => {
     responder([[/\/v1\/idosos$/, 200, []]])
 
-    renderizar()
+    renderizarFamiliar()
 
     expect(await screen.findByText('Nenhum idoso na sua rede')).toBeTruthy()
   })
@@ -86,7 +86,7 @@ describe('FamiliarPage', () => {
   it('erro ao listar os idosos oferece nova tentativa', async () => {
     responder([[/\/v1\/idosos$/, 503, undefined]])
 
-    renderizar()
+    renderizarFamiliar()
 
     expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeTruthy()
   })
@@ -94,7 +94,7 @@ describe('FamiliarPage', () => {
   it('idoso em que o usuário é médico não aparece na área do familiar', async () => {
     responder([[/\/v1\/idosos$/, 200, [{ ...IDOSO, papelAcesso: 'MEDICO' }]]])
 
-    renderizar()
+    renderizarFamiliar()
 
     expect(await screen.findByText('Nenhum idoso na sua rede')).toBeTruthy()
   })

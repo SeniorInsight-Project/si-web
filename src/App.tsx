@@ -17,6 +17,9 @@ const MedicoPage = lazy(() =>
 const OperadoraPage = lazy(() =>
   import('./pages/OperadoraPage').then((module) => ({ default: module.OperadoraPage })),
 )
+const ConvitePage = lazy(() =>
+  import('./pages/ConvitePage').then((module) => ({ default: module.ConvitePage })),
+)
 const GovernancaPage = lazy(() =>
   import('./pages/interno/GovernancaPage').then((module) => ({ default: module.GovernancaPage })),
 )
@@ -35,6 +38,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<PortalHomePage />} />
+            <Route path="convite" element={<ConvitePage />} />
             <Route
               path="familiar"
               element={

@@ -1791,3 +1791,27 @@
   background: #fff;
   font: inherit;
 }
+
+.portal-form {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+  margin-top: 8px;
+}
+
+.portal-form label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.portal-form input {
+  padding: 8px 12px;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  font: inherit;
+}
+
+.portal-table tr.is-active td {
+  background: #f4f6fb;
+}

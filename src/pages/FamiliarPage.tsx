@@ -1,28 +1,19 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
-import { Icon, type IconName } from '../components/Icon'
-import { TrendChart } from '../components/TrendChart'
-import {
-  METRICA_BATIMENTOS,
-  METRICA_PASSOS,
-  METRICA_SCORE,
-  type TrendPeriod,
-} from '../components/trendMetrics'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { Bloco, EstadoErro } from '../components/Bloco'
+import { GraficoEvolucao } from '../components/GraficoEvolucao'
 import { ApiError } from '../services/api'
+import { FAIXAS } from '../services/rotulos'
 import {
   diaLocal,
   idade,
-  intervaloDoPeriodo,
   listarAlertas,
   listarIdosos,
   listarRede,
   listarRotinasDoDia,
-  montarPontosGrafico,
   obterDireito,
   obterEstadoAtual,
-  obterHistoricoScore,
   obterScoreRecente,
-  obterSerie,
   obterStatusAparelho,
   type Alerta,
   type Direito,
@@ -31,12 +22,6 @@ import {
   type ScoreRecente,
   type StatusIngestao,
 } from '../services/familiarApi'
-
-const FAIXAS: Record<NonNullable<ScoreRecente['faixa']>, { label: string; tone: 'green' | 'amber' | 'coral' }> = {
-  VERDE: { label: 'Verde', tone: 'green' },
-  AMARELO: { label: 'Amarelo', tone: 'amber' },
-  VERMELHO: { label: 'Vermelho', tone: 'coral' },
-}
 
 const ESTADOS_SEM_SCORE: Record<Exclude<ScoreRecente['estado'], 'DISPONIVEL'>, string> = {
   CONHECENDO_ROTINA: 'Conhecendo a rotina',
@@ -293,40 +278,8 @@ function PainelIdoso({ idosoId }: { idosoId: string }) {
         {(dado) => <CartaoAssinatura direito={dado} />}
       </Bloco>
 
-      <GraficoIdoso idosoId={idosoId} />
+      <GraficoEvolucao idosoId={idosoId} />
     </>
-  )
-}
-
-function GraficoIdoso({ idosoId }: { idosoId: string }) {
-  const [periodo, setPeriodo] = useState<TrendPeriod>('7d')
-  const { de, ate } = intervaloDoPeriodo(periodo)
-  const serie = useQuery({
-    queryKey: ['familiar', idosoId, 'serie', de, ate],
-    queryFn: () => obterSerie(idosoId, de, ate),
-  })
-  // Sem Premium/trial o histórico do score responde 403: o gráfico segue só com passos e batimentos.
-  const historico = useQuery({
-    queryKey: ['familiar', idosoId, 'historico-score', de, ate],
-    queryFn: () => obterHistoricoScore(idosoId, de, ate),
-    retry: (falhas, erro) => !(erro instanceof ApiError && erro.status === 403) && falhas < 2,
-  })
-
-  const metricas = [METRICA_PASSOS, METRICA_BATIMENTOS, ...(historico.isSuccess ? [METRICA_SCORE] : [])]
-  const pontos = montarPontosGrafico(de, ate, serie.data, historico.data)
-
-  return (
-    <TrendChart
-      title="Evolução"
-      subtitle="Passos e batimentos por dia, a partir dos dados do relógio, e o score de bem-estar."
-      data={pontos}
-      metrics={metricas}
-      period={periodo}
-      onPeriodChange={setPeriodo}
-      isLoading={serie.isLoading}
-      isError={serie.isError}
-      onRetry={() => void serie.refetch()}
-    />
   )
 }
 
@@ -416,64 +369,4 @@ function erroScore(erro: unknown): string | null {
     return 'O semáforo de bem-estar faz parte do Premium (ou do período de teste).'
   }
   return null
-}
-
-type BlocoProps<T> = {
-  titulo: string
-  icone: IconName
-  tom: 'green' | 'blue' | 'purple' | 'coral' | 'amber'
-  query: UseQueryResult<T>
-  children: (dado: T) => ReactNode
-  vazio?: (dado: T) => boolean
-  mensagemVazio?: string
-  /** Mensagem própria para um erro conhecido (ex.: 403 do Premium); null usa a mensagem genérica. */
-  erro?: (erro: unknown) => string | null
-}
-
-/** Cartão com os estados de carregando, vazio e erro de uma consulta. */
-function Bloco<T>({ titulo, icone, tom, query, children, vazio, mensagemVazio, erro }: BlocoProps<T>) {
-  let conteudo: ReactNode
-  if (query.isLoading) {
-    conteudo = (
-      <p className="portal-muted" role="status">
-        Carregando…
-      </p>
-    )
-  } else if (query.isError) {
-    const conhecido = erro?.(query.error)
-    conteudo = conhecido ? (
-      <p className="portal-muted">{conhecido}</p>
-    ) : (
-      <EstadoErro mensagem="Não foi possível carregar." onRetry={() => void query.refetch()} />
-    )
-  } else if (query.data === undefined) {
-    conteudo = null
-  } else if (vazio?.(query.data)) {
-    conteudo = <p className="portal-muted">{mensagemVazio}</p>
-  } else {
-    conteudo = children(query.data)
-  }
-
-  return (
-    <article className="portal-card">
-      <div className="portal-card__title-row">
-        <span className={`feature__icon feature__icon--${tom}`}>
-          <Icon name={icone} size={22} />
-        </span>
-        <h2>{titulo}</h2>
-      </div>
-      {conteudo}
-    </article>
-  )
-}
-
-function EstadoErro({ mensagem, onRetry }: { mensagem: string; onRetry: () => void }) {
-  return (
-    <div className="portal-state" role="alert">
-      <p className="portal-muted">{mensagem}</p>
-      <button type="button" className="btn btn--ghost btn--small" onClick={onRetry}>
-        Tentar de novo
-      </button>
-    </div>
-  )
 }
