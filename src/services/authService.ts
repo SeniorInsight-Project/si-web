@@ -1,20 +1,20 @@
 import { GATEWAY_ORIGIN } from '../config'
 import {
   apiRequest,
-  ApiError,
   getCsrfToken,
   purgeBrowserStoredTokens,
   setCsrfToken,
 } from './api'
 
-export type PortalRole = 'FAMILIAR' | 'MEDICO' | 'OPERADORA' | 'EQUIPE'
+export const PORTAL_ROLES = ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'] as const
+
+export type PortalRole = (typeof PORTAL_ROLES)[number]
 
 export type BffUserProfile = {
   sub: string
   name: string
   email: string
   roles: PortalRole[]
-  activeRole: PortalRole
 }
 
 export type BffSessionResponse = {
@@ -37,81 +37,96 @@ export function buildOidcLogoutUrl(): string {
   return `${GATEWAY_ORIGIN}/logout`
 }
 
-export function createDemoSession(role: PortalRole = 'FAMILIAR'): BffSessionResponse {
-  const profilesByRole: Record<PortalRole, BffUserProfile> = {
-    FAMILIAR: {
-      sub: 'kc-sub-familiar-01',
-      name: 'Carlos Eduardo Lima',
-      email: 'carlos.lima@familia.seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'FAMILIAR',
-    },
-    MEDICO: {
-      sub: 'kc-sub-medico-01',
-      name: 'Dr. Henrique Silva',
-      email: 'henrique.silva@clinica.seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'MEDICO',
-    },
-    OPERADORA: {
-      sub: 'kc-sub-operadora-01',
-      name: ' Marina Costa (ViverBem)',
-      email: 'marina.costa@viverbem.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'OPERADORA',
-    },
-    EQUIPE: {
-      sub: 'kc-sub-equipe-01',
-      name: 'Engenharia & DPO SeniorInsight',
-      email: 'governanca@seniorinsight.com.br',
-      roles: ['FAMILIAR', 'MEDICO', 'OPERADORA', 'EQUIPE'],
-      activeRole: 'EQUIPE',
-    },
+export function unauthenticatedSession(): BffSessionResponse {
+  return {
+    authenticated: false,
+    sessionKeyPrefix: 'gw:sess',
+    csrfHeaderName: 'X-XSRF-TOKEN',
+    csrfProtected: false,
+    user: null,
+  }
+}
+
+export const UNAUTHENTICATED_SESSION: BffSessionResponse = unauthenticatedSession()
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+/** Mantém só papéis conhecidos. Papel ausente ou desconhecido não concede acesso. */
+function parseRoles(value: unknown): PortalRole[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const roles = new Set<PortalRole>()
+  for (const raw of value) {
+    if (typeof raw !== 'string') {
+      continue
+    }
+    const upper = raw.trim().toUpperCase()
+    if ((PORTAL_ROLES as readonly string[]).includes(upper)) {
+      roles.add(upper as PortalRole)
+    }
+  }
+  return [...roles]
+}
+
+/**
+ * Valida a resposta do BFF. Qualquer formato inesperado resulta em sessão não autenticada.
+ */
+export function parseBffSession(payload: unknown): BffSessionResponse {
+  if (!isRecord(payload) || payload.authenticated !== true || !isRecord(payload.user)) {
+    return unauthenticatedSession()
+  }
+
+  const { sub, name, email, roles } = payload.user
+  if (!isNonEmptyString(sub)) {
+    return unauthenticatedSession()
   }
 
   return {
     authenticated: true,
     sessionKeyPrefix: 'gw:sess',
     csrfHeaderName: 'X-XSRF-TOKEN',
-    csrfProtected: true,
+    csrfProtected: Boolean(getCsrfToken()),
     user: {
-      ...profilesByRole[role],
-      name: profilesByRole[role].name.trim(),
+      sub,
+      name: isNonEmptyString(name) ? name.trim() : '',
+      email: isNonEmptyString(email) ? email.trim() : '',
+      roles: parseRoles(roles),
     },
+    expiresAt: typeof payload.expiresAt === 'string' ? payload.expiresAt : undefined,
   }
 }
 
-export const UNAUTHENTICATED_SESSION: BffSessionResponse = {
-  authenticated: false,
-  sessionKeyPrefix: 'gw:sess',
-  csrfHeaderName: 'X-XSRF-TOKEN',
-  csrfProtected: Boolean(getCsrfToken()),
-  user: null,
-}
-
+/**
+ * Consulta a sessão no BFF e falha fechado: erro de rede, 401, 403, 5xx ou resposta
+ * inválida resultam em sessão não autenticada.
+ */
 export async function fetchBffSession(): Promise<BffSessionResponse> {
   purgeBrowserStoredTokens()
 
+  // Demonstração só no servidor de desenvolvimento e com VITE_MODO_DEMO=true.
+  // A condição fica literal aqui para o build de produção descartar o módulo.
+  if (import.meta.env.DEV && import.meta.env.VITE_MODO_DEMO === 'true') {
+    const { createDemoSession } = await import('./demoSession')
+    return createDemoSession()
+  }
+
   try {
-    const session = await apiRequest<BffSessionResponse>('/auth/session')
-    if (session.csrfToken) {
-      setCsrfToken(session.csrfToken)
+    const payload = await apiRequest<unknown>('/auth/session')
+    if (isRecord(payload) && isNonEmptyString(payload.csrfToken)) {
+      setCsrfToken(payload.csrfToken)
     }
-
-    return {
-      ...session,
-      sessionKeyPrefix: 'gw:sess',
-      csrfHeaderName: 'X-XSRF-TOKEN',
-      csrfProtected: Boolean(getCsrfToken() || session.csrfProtected),
-    }
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-      return UNAUTHENTICATED_SESSION
-    }
-
-    // Fallback de demonstração local quando o container do api-gateway não está em execução
-    setCsrfToken('bff-csrf-active-token')
-    return createDemoSession('FAMILIAR')
+    return parseBffSession(payload)
+  } catch {
+    setCsrfToken(null)
+    return unauthenticatedSession()
   }
 }
 
@@ -123,7 +138,7 @@ export async function refreshBffCsrfToken(): Promise<string | null> {
       return payload.token
     }
   } catch {
-    // Caso o gateway esteja offline, mantém o token atual se existir
+    // Sem token novo: as escritas continuam com o token atual ou são recusadas pelo gateway
   }
 
   return getCsrfToken()

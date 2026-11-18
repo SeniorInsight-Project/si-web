@@ -1,9 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { SessionContext, useSession } from '../hooks/useSession'
 import {
   buildOidcLoginUrl,
-  createDemoSession,
   fetchBffSession,
   logoutBffSession,
   UNAUTHENTICATED_SESSION,
@@ -20,8 +19,6 @@ type SessionProviderProps = {
 
 export function SessionProvider({ children }: SessionProviderProps) {
   const queryClient = useQueryClient()
-  const [overrideSession, setOverrideSession] = useState<BffSessionResponse | null>(null)
-
   const { data, isLoading } = useQuery<BffSessionResponse>({
     queryKey: SESSION_QUERY_KEY,
     queryFn: fetchBffSession,
@@ -29,17 +26,11 @@ export function SessionProvider({ children }: SessionProviderProps) {
     retry: 0,
   })
 
-  const session = overrideSession ?? data ?? UNAUTHENTICATED_SESSION
+  const session = data ?? UNAUTHENTICATED_SESSION
 
   const loginWithKeycloak = (returnTo = '/portal') => {
-    const loginUrl = buildOidcLoginUrl(returnTo)
-    if (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) {
-      // Se a sessão atual estiver desligada localmente, reativa via sessão BFF ou redireciona ao OIDC
-      if (!session.authenticated) {
-        setOverrideSession(createDemoSession('FAMILIAR'))
-        return
-      }
-      window.location.assign(loginUrl)
+    if (typeof window !== 'undefined') {
+      window.location.assign(buildOidcLoginUrl(returnTo))
     }
   }
 
@@ -49,12 +40,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     } catch {
       // Mantém encerramento local mesmo se o gateway estiver indisponível
     }
-    setOverrideSession(UNAUTHENTICATED_SESSION)
     queryClient.setQueryData(SESSION_QUERY_KEY, UNAUTHENTICATED_SESSION)
-  }
-
-  const switchRole = (role: PortalRole) => {
-    setOverrideSession(createDemoSession(role))
   }
 
   return (
@@ -65,7 +51,6 @@ export function SessionProvider({ children }: SessionProviderProps) {
         isAuthenticated: session.authenticated,
         loginWithKeycloak,
         logout,
-        switchRole,
       }}
     >
       {children}
@@ -79,7 +64,7 @@ type ProtectedRouteProps = {
 }
 
 export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) {
-  const { session, isLoading, isAuthenticated, loginWithKeycloak, switchRole } = useSession()
+  const { session, isLoading, isAuthenticated, loginWithKeycloak } = useSession()
 
   if (isLoading) {
     return (
@@ -132,15 +117,6 @@ export function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) 
               A rota exige o papel <strong>{requiredRole}</strong> na sessão do BFF.
             </p>
           </div>
-        </div>
-        <div className="portal-auth-gate__actions">
-          <button
-            type="button"
-            className="btn btn--ghost btn--small"
-            onClick={() => switchRole(requiredRole)}
-          >
-            Alternar para perfil {requiredRole}
-          </button>
         </div>
       </section>
     )
