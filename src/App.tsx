@@ -17,8 +17,11 @@ const MedicoPage = lazy(() =>
 const OperadoraPage = lazy(() =>
   import('./pages/OperadoraPage').then((module) => ({ default: module.OperadoraPage })),
 )
-const EquipePage = lazy(() =>
-  import('./pages/EquipePage').then((module) => ({ default: module.EquipePage })),
+const ConvitePage = lazy(() =>
+  import('./pages/ConvitePage').then((module) => ({ default: module.ConvitePage })),
+)
+const GovernancaPage = lazy(() =>
+  import('./pages/interno/GovernancaPage').then((module) => ({ default: module.GovernancaPage })),
 )
 
 function App() {
@@ -35,6 +38,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/portal" element={<PortalLayout />}>
             <Route index element={<PortalHomePage />} />
+            <Route path="convite" element={<ConvitePage />} />
             <Route
               path="familiar"
               element={
@@ -59,15 +63,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="equipe"
-              element={
-                <ProtectedRoute requiredRole="EQUIPE">
-                  <EquipePage />
-                </ProtectedRoute>
-              }
-            />
           </Route>
+          {/* Área da equipe: fora do /portal e sem link em nenhum menu. /portal/equipe cai no "*". */}
+          <Route path="/interno/governanca" element={<GovernancaPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

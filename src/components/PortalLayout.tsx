@@ -2,30 +2,19 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import logo from '../assets/figma/logo-seniorinsight.png'
 import { useBackendHealth } from '../hooks/useBackendHealth'
 import { useSession } from '../hooks/useSession'
-import { Icon, type IconName } from './Icon'
-
-const PORTAL_NAV_ITEMS: {
-  to: string
-  label: string
-  icon: IconName
-  end?: boolean
-}[] = [
-  { to: '/portal', label: 'Visão geral', icon: 'sparkles', end: true },
-  { to: '/portal/familiar', label: 'Familiar', icon: 'heart' },
-  { to: '/portal/medico', label: 'Médico', icon: 'clipboard' },
-  { to: '/portal/operadora', label: 'Operadora', icon: 'users' },
-  { to: '/portal/equipe', label: 'Equipe', icon: 'shield' },
-]
+import { viewsForRoles } from '../portalViews'
+import { Icon } from './Icon'
 
 export function PortalLayout() {
-  const { data: health, isLoading, isError } = useBackendHealth()
+  const { isLoading, isError } = useBackendHealth()
   const { session, isAuthenticated, loginWithKeycloak, logout } = useSession()
+  const views = viewsForRoles(session.user?.roles ?? [])
 
   const gatewayStatusLabel = isLoading
-    ? 'Verificando API Gateway…'
+    ? 'Verificando conexão…'
     : isError
-      ? 'Gateway offline (modo demonstração)'
-      : `Gateway online (${health?.status ?? 'UP'})`
+      ? 'Serviço indisponível'
+      : 'Conectado'
 
   const gatewayStatusTone = isLoading ? 'amber' : isError ? 'coral' : 'green'
 
@@ -40,21 +29,22 @@ export function PortalLayout() {
             <span className="tag tag--blue">Portal Web</span>
           </div>
 
-          <nav className="portal-nav" aria-label="Áreas do portal por perfil">
-            {PORTAL_NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `portal-nav__link ${isActive ? 'is-active' : ''}`
-                }
-              >
-                <Icon name={item.icon} size={16} />
-                <span>{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
+          {views.length > 1 ? (
+            <nav className="portal-nav" aria-label="Áreas do portal">
+              {views.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `portal-nav__link ${isActive ? 'is-active' : ''}`
+                  }
+                >
+                  <Icon name={item.icon} size={16} />
+                  <span>{item.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          ) : null}
 
           <div className="portal-header__actions">
             <span
@@ -66,23 +56,13 @@ export function PortalLayout() {
               {gatewayStatusLabel}
             </span>
 
-            <span
-              className="micro-pill micro-pill--blue"
-              title="Sessão mantida no Redis (gw:sess:{id}) via cookie httpOnly e proteção CSRF"
-            >
-              <Icon name="lock" size={14} />
-              {isAuthenticated
-                ? `BFF (${session.sessionKeyPrefix}:*) · CSRF ativo`
-                : 'Sessão BFF encerrada'}
-            </span>
-
             {isAuthenticated ? (
               <button
                 type="button"
                 className="btn btn--ghost btn--small"
                 onClick={() => void logout()}
               >
-                Sair ({session.user?.name.split(' ')[0]})
+                Sair{session.user?.name ? ` (${session.user.name.split(' ')[0]})` : ''}
               </button>
             ) : (
               <button
@@ -90,7 +70,7 @@ export function PortalLayout() {
                 className="btn btn--navy btn--small"
                 onClick={() => loginWithKeycloak()}
               >
-                Entrar (Keycloak)
+                Entrar
               </button>
             )}
           </div>
@@ -106,7 +86,7 @@ export function PortalLayout() {
       <footer className="footer">
         <div className="container footer__inner">
           <img src={logo} alt="SeniorInsight" width={114} height={24} />
-          <p>© {new Date().getFullYear()} SeniorInsight · Portal Web (BFF httpOnly + CSRF).</p>
+          <p>© {new Date().getFullYear()} SeniorInsight · Portal Web</p>
           <Link to="/">Voltar para a página inicial</Link>
         </div>
       </footer>
