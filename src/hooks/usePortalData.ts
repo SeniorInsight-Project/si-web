@@ -1,21 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  fetchFamiliarOverview,
   fetchMedicoOverview,
   fetchOperadoraOverview,
-  type FamiliarOverview,
   type MedicoOverview,
   type OperadoraOverview,
   type TrendPeriod,
 } from '../services/portalService'
-
-export function useFamiliarOverview(period: TrendPeriod) {
-  return useQuery<FamiliarOverview>({
-    queryKey: ['portal', 'familiar', period],
-    queryFn: () => fetchFamiliarOverview(period),
-    staleTime: 60_000,
-  })
-}
 
 export function useMedicoOverview(period: TrendPeriod) {
   return useQuery<MedicoOverview>({

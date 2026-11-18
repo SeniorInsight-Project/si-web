@@ -1742,3 +1742,52 @@
 .interno-main {
   padding: 40px 0 72px;
 }
+
+/* Visão Familiar: blocos com dados do backend */
+.portal-facts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.portal-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.portal-facts dt {
+  color: #64748b;
+}
+
+.portal-facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.portal-bullets {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.portal-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.portal-select {
+  display: grid;
+  gap: 4px;
+}
+
+.portal-select select {
+  min-width: 220px;
+  padding: 8px 12px;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+}

@@ -8,67 +8,38 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import type { TrendPeriod, TrendPoint } from '../services/portalService'
 
-type MetricKey = 'score' | 'heartRate' | 'steps' | 'sleepHours'
+import type { TrendMetric, TrendPeriod, TrendRow } from './trendMetrics'
 
-const METRICS: {
-  key: MetricKey
-  label: string
-  unit: string
-  color: string
-  fillId: string
-}[] = [
-  {
-    key: 'score',
-    label: 'Score de Risco (IA)',
-    unit: 'pts',
-    color: '#1e2e69',
-    fillId: 'trendGradientNavy',
-  },
-  {
-    key: 'heartRate',
-    label: 'Frequência cardíaca',
-    unit: 'bpm',
-    color: '#d83729',
-    fillId: 'trendGradientCoral',
-  },
-  {
-    key: 'steps',
-    label: 'Passos diários',
-    unit: 'passos',
-    color: '#10b981',
-    fillId: 'trendGradientGreen',
-  },
-  {
-    key: 'sleepHours',
-    label: 'Horas de sono',
-    unit: 'h',
-    color: '#6d4fd8',
-    fillId: 'trendGradientPurple',
-  },
-]
+export type { TrendMetric, TrendPeriod, TrendRow }
 
 type TrendChartProps = {
   title: string
   subtitle: string
-  data: TrendPoint[]
+  data: TrendRow[]
+  metrics: TrendMetric[]
   period: TrendPeriod
   onPeriodChange: (period: TrendPeriod) => void
-  defaultMetric?: MetricKey
+  isLoading?: boolean
+  isError?: boolean
+  onRetry?: () => void
 }
 
 export function TrendChart({
   title,
   subtitle,
   data,
+  metrics,
   period,
   onPeriodChange,
-  defaultMetric = 'score',
+  isLoading = false,
+  isError = false,
+  onRetry,
 }: TrendChartProps) {
-  const [selectedMetric, setSelectedMetric] = useState<MetricKey>(defaultMetric)
-  const activeConfig =
-    METRICS.find((metric) => metric.key === selectedMetric) ?? METRICS[0]
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const active = metrics.find((metric) => metric.key === selectedKey) ?? metrics[0]
+  const fillId = `trendFill-${active?.key ?? 'vazio'}`
+  const hasValues = Boolean(active) && data.some((row) => typeof row[active.key] === 'number')
 
   return (
     <section className="portal-card portal-chart" aria-label={title}>
@@ -100,67 +71,80 @@ export function TrendChart({
         </div>
       </div>
 
-      <div className="portal-chart__metrics" role="tablist" aria-label="Indicador exibido">
-        {METRICS.map((metric) => {
-          const isSelected = metric.key === selectedMetric
-          return (
-            <button
-              key={metric.key}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              className={`portal-metric-pill ${isSelected ? 'is-active' : ''}`}
-              onClick={() => setSelectedMetric(metric.key)}
-            >
-              <span
-                className="portal-metric-pill__dot"
-                style={{ backgroundColor: metric.color }}
-              />
-              {metric.label}
-            </button>
-          )
-        })}
-      </div>
+      {metrics.length > 1 ? (
+        <div className="portal-chart__metrics" role="tablist" aria-label="Indicador exibido">
+          {metrics.map((metric) => {
+            const isSelected = metric.key === active?.key
+            return (
+              <button
+                key={metric.key}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                className={`portal-metric-pill ${isSelected ? 'is-active' : ''}`}
+                onClick={() => setSelectedKey(metric.key)}
+              >
+                <span className="portal-metric-pill__dot" style={{ backgroundColor: metric.color }} />
+                {metric.label}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
 
       <div className="portal-chart__canvas">
-        <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={data} margin={{ top: 12, right: 16, left: -12, bottom: 0 }}>
-            <defs>
-              <linearGradient id={activeConfig.fillId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={activeConfig.color} stopOpacity={0.28} />
-                <stop offset="95%" stopColor={activeConfig.color} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e6e8eb" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              tickLine={false}
-              axisLine={{ stroke: '#e6e8eb' }}
-            />
-            <YAxis
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '14px',
-                border: '1px solid #e6e8eb',
-                boxShadow: '0 8px 20px rgba(30, 46, 105, 0.08)',
-              }}
-              formatter={(value) => [`${String(value)} ${activeConfig.unit}`, activeConfig.label]}
-            />
-            <Area
-              type="monotone"
-              dataKey={activeConfig.key}
-              stroke={activeConfig.color}
-              strokeWidth={3}
-              fillOpacity={1}
-              fill={`url(#${activeConfig.fillId})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <p className="portal-muted" role="status">
+            Carregando o histórico…
+          </p>
+        ) : isError ? (
+          <div className="portal-state" role="alert">
+            <p className="portal-muted">Não foi possível carregar o histórico.</p>
+            {onRetry ? (
+              <button type="button" className="btn btn--ghost btn--small" onClick={onRetry}>
+                Tentar de novo
+              </button>
+            ) : null}
+          </div>
+        ) : !active || !hasValues ? (
+          <p className="portal-muted">Ainda não há dados neste período.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={data} margin={{ top: 12, right: 16, left: -12, bottom: 0 }}>
+              <defs>
+                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={active.color} stopOpacity={0.28} />
+                  <stop offset="95%" stopColor={active.color} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e6e8eb" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: '#e6e8eb' }}
+              />
+              <YAxis tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '14px',
+                  border: '1px solid #e6e8eb',
+                  boxShadow: '0 8px 20px rgba(30, 46, 105, 0.08)',
+                }}
+                formatter={(value) => [`${String(value)} ${active.unit}`, active.label]}
+              />
+              <Area
+                type="monotone"
+                dataKey={active.key}
+                stroke={active.color}
+                strokeWidth={3}
+                fillOpacity={1}
+                fill={`url(#${fillId})`}
+                connectNulls={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </section>
   )

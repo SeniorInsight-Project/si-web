@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
-import { TrendChart } from '../components/TrendChart'
+import { TrendChart, type TrendMetric } from '../components/TrendChart'
 import { useMedicoOverview } from '../hooks/usePortalData'
 import type { RiskBand, TrendPeriod } from '../services/portalService'
+
+const METRICAS_LEGADO: TrendMetric[] = [
+  { key: 'score', label: 'Score de risco', unit: 'pts', color: '#1e2e69' },
+  { key: 'heartRate', label: 'Batimentos', unit: 'bpm', color: '#d83729' },
+  { key: 'steps', label: 'Passos', unit: 'passos', color: '#10b981' },
+]
 
 function formatBandLabel(band: RiskBand) {
   switch (band) {
@@ -94,9 +100,9 @@ export function MedicoPage() {
         title="Evolução clínica longitudinal do paciente selecionado"
         subtitle="Séries de 7 e 30 dias para apoio à decisão clínica (modo somente leitura)"
         data={data.trends}
+        metrics={METRICAS_LEGADO}
         period={period}
         onPeriodChange={setPeriod}
-        defaultMetric="heartRate"
       />
     </div>
   )

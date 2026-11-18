@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
-import { TrendChart } from '../components/TrendChart'
+import { TrendChart, type TrendMetric } from '../components/TrendChart'
 import { useOperadoraOverview } from '../hooks/usePortalData'
 import type { RiskBand, TrendPeriod } from '../services/portalService'
+
+const METRICAS_LEGADO: TrendMetric[] = [
+  { key: 'score', label: 'Score de risco', unit: 'pts', color: '#1e2e69' },
+  { key: 'heartRate', label: 'Batimentos', unit: 'bpm', color: '#d83729' },
+  { key: 'steps', label: 'Passos', unit: 'passos', color: '#10b981' },
+]
 
 function formatCohortBand(band: RiskBand) {
   switch (band) {
@@ -135,6 +141,7 @@ export function OperadoraPage() {
         title="Evolução do Score médio da carteira monitorada"
         subtitle="Acompanhamento de 7 e 30 dias dos indicadores agregados da carteira B2B"
         data={data.trends}
+        metrics={METRICAS_LEGADO}
         period={period}
         onPeriodChange={setPeriod}
       />

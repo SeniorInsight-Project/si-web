@@ -7,30 +7,6 @@ export type TrendPoint = {
   score: number
   heartRate: number
   steps: number
-  sleepHours: number
-}
-
-export type FamiliarOverview = {
-  elderName: string
-  elderAge: number
-  riskScore: number
-  riskBand: RiskBand
-  lastUpdated: string
-  aiSummary: string
-  subscriptionPlan: string
-  subscriptionStatus: string
-  careNetwork: {
-    name: string
-    role: string
-    status: string
-  }[]
-  recentDoses: {
-    medicine: string
-    dosage: string
-    time: string
-    confirmed: boolean
-  }[]
-  trends: TrendPoint[]
 }
 
 export type MedicoPatient = {
@@ -78,13 +54,13 @@ export type OperadoraOverview = {
 }
 
 const SEVEN_DAY_TRENDS: TrendPoint[] = [
-  { label: '18/10', score: 22, heartRate: 72, steps: 4120, sleepHours: 7.4 },
-  { label: '19/10', score: 24, heartRate: 74, steps: 3980, sleepHours: 7.1 },
-  { label: '20/10', score: 21, heartRate: 71, steps: 4450, sleepHours: 7.6 },
-  { label: '21/10', score: 28, heartRate: 76, steps: 3420, sleepHours: 6.8 },
-  { label: '22/10', score: 25, heartRate: 73, steps: 4010, sleepHours: 7.2 },
-  { label: '23/10', score: 20, heartRate: 70, steps: 4680, sleepHours: 7.8 },
-  { label: '24/10', score: 19, heartRate: 72, steps: 4520, sleepHours: 7.5 },
+  { label: '18/10', score: 22, heartRate: 72, steps: 4120 },
+  { label: '19/10', score: 24, heartRate: 74, steps: 3980 },
+  { label: '20/10', score: 21, heartRate: 71, steps: 4450 },
+  { label: '21/10', score: 28, heartRate: 76, steps: 3420 },
+  { label: '22/10', score: 25, heartRate: 73, steps: 4010 },
+  { label: '23/10', score: 20, heartRate: 70, steps: 4680 },
+  { label: '24/10', score: 19, heartRate: 72, steps: 4520 },
 ]
 
 const THIRTY_DAY_TRENDS: TrendPoint[] = Array.from({ length: 30 }, (_, index) => {
@@ -93,44 +69,17 @@ const THIRTY_DAY_TRENDS: TrendPoint[] = Array.from({ length: 30 }, (_, index) =>
   const score = Math.round(23 + wave * 6 + (index % 4 === 0 ? 2 : -1))
   const heartRate = Math.round(72 + wave * 4)
   const steps = Math.round(4100 - wave * 450 + (index % 3) * 140)
-  const sleepHours = Number((7.2 - wave * 0.4).toFixed(1))
 
   return {
     label: `${String(day).padStart(2, '0')}/10`,
     score,
     heartRate,
     steps,
-    sleepHours,
   }
 })
 
 function getTrendsByPeriod(period: TrendPeriod): TrendPoint[] {
   return period === '7d' ? SEVEN_DAY_TRENDS : THIRTY_DAY_TRENDS
-}
-
-export async function fetchFamiliarOverview(period: TrendPeriod): Promise<FamiliarOverview> {
-  return {
-    elderName: 'Dona Maria Aparecida',
-    elderAge: 78,
-    riskScore: 19,
-    riskBand: 'ESTAVEL',
-    lastUpdated: 'Hoje às 10:15 · Health Connect sincronizado',
-    aiSummary:
-      'Padrão cardiorrespiratório e sono estáveis nos últimos 7 dias. Adesão integral aos medicamentos matinais e caminhada leve dentro da linha de base.',
-    subscriptionPlan: 'SeniorInsight Premium Familiar',
-    subscriptionStatus: 'Ativa · Renovação em 15/11/2026',
-    careNetwork: [
-      { name: 'Carlos Eduardo (Você)', role: 'Familiar Administrador', status: 'Notificações ativas' },
-      { name: 'Roberta Lima', role: 'Neta · Rede de apoio', status: 'Notificações ativas' },
-      { name: 'Dr. Henrique Silva', role: 'Cardiologista (Leitura)', status: 'Relatório semanal ativo' },
-    ],
-    recentDoses: [
-      { medicine: 'Losartana Potássica', dosage: '50 mg · 1 comprimido', time: '08:00', confirmed: true },
-      { medicine: 'Rosuvastatina', dosage: '10 mg · 1 comprimido', time: '10:00', confirmed: true },
-      { medicine: 'Metformina XR', dosage: '500 mg · após jantar', time: '20:00', confirmed: false },
-    ],
-    trends: getTrendsByPeriod(period),
-  }
 }
 
 export async function fetchMedicoOverview(period: TrendPeriod): Promise<MedicoOverview> {
